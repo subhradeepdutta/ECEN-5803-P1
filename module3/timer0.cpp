@@ -55,15 +55,15 @@
       A.  Set 420 PWM Period
    VI   1.6 ms group
       A. Display timer and flag
-      B. Heartbeat/ LED outputs
    VII  3.2 ms group
       A. Slow Software Timers   
     VIII 6.4 ms group A
       A. Very Slow Software Timers
    IX.  Long time group
       A. Determine Mode
-      B. Heartbeat/ LED outputs       
-   X.  Exit
+      B. Heartbeat/ LED outputs
+   X. 	Heartbeat/ LED outputs
+   XI.  Exit
    
 -- 
 --      Copyright (c) 2015 Tim Scherr  All rights reserved.
@@ -87,7 +87,7 @@ typedef unsigned short uint16_t;
 extern "C" {
 #endif
 
-	/**********************/   
+/**********************/   
 /*   Definitions     */
 /**********************/
 
@@ -101,6 +101,9 @@ volatile    UCHAR swtimer6 = 0;
 volatile    UCHAR swtimer7 = 0; 
 
 volatile uint16_t SwTimerIsrCounter = 0U;
+
+uint16_t led_timer = 0; 
+
 UCHAR  display_timer = 0;  								// 1 second software timer for display   
 UCHAR  display_flag = 0;   								// flag between timer interrupt and monitor.c, like
 																					// a binary semaphore      
@@ -147,10 +150,10 @@ void timer0(void)
 
 //     A. Update Fast Software timers 
 	if (swtimer0 > 0)     // if not yet expired, 
-		(swtimer0)--;      	// then decrement fast timer (1 ms to 256 ms)
+		(swtimer0)--;      	// then decrement fast timer (.1 ms to 25.6 ms)
 
 	if (swtimer1 > 0)     // if not yet expired, 
-		(swtimer1)--;      	// then decrement fast timer (1 ms to 256 ms)
+		(swtimer1)--;      	// then decrement fast timer (.1 ms to 25.6 ms)
   
 //    B.   Update Sensors
 	 /* NOT NEEDED IN MODULE 3 */
@@ -175,9 +178,9 @@ void timer0(void)
 	//      A.  Medium Software timers
 		
 		if (swtimer2 > 0)  	// if not yet expired, every other time 
-			(swtimer2)--;     // then decrement med timer  (4 ms to 1024 ms)
+			(swtimer2)--;     // then decrement med timer  (.4 ms to 102.4 ms)
 		if (swtimer3 > 0) 	// if not yet expired, every other time 
-			(swtimer3)--;     // then decrement med timer  (4 ms to 1024 ms)
+			(swtimer3)--;     // then decrement med timer  (.4 ms to 102.4 ms)
 
 	//      B.  
 	}
@@ -211,9 +214,9 @@ void timer0(void)
 
 //    A. Slow Software Timers
       if (swtimer4 > 0)  // if not yet expired, every 32nd time
-         (swtimer4)--;        // then decrement slow timer (32 ms to 8 s)
+         (swtimer4)--;        // then decrement slow timer (3.2 ms to .8 s)
       if (swtimer5 > 0) // if not yet expired, every 32nd time
-         (swtimer5)--;        // then decrement slow timer (32 ms to 8 s)
+         (swtimer5)--;        // then decrement slow timer (3.2 ms to .8 s)
          
 //    B.  Update
     
@@ -224,17 +227,16 @@ void timer0(void)
 /*******************************************************************/   
 	if ((timer_state & 0x20) != 0)
 	{
-	//    timer states 32, 96, 160, 224 
+		//    timer states 32, 96, 160, 224 
 
-	//    A. Very Slow Software Timers
-	if (swtimer6 > 0)  // if not yet expired, every 64th time 
-		(swtimer6)--;    // then decrement very slow timer (6.4 ms to 1.6s)
+		//    A. Very Slow Software Timers
+		if (swtimer6 > 0)  // if not yet expired, every 64th time 
+			(swtimer6)--;    // then decrement very slow timer (6.4 ms to 1.6s)
 
-	if (swtimer7 > 0)  // if not yet expired, every 64th time 
-		(swtimer7)--;    // then decrement very slow timer (64 ms to 1.6s)
+		if (swtimer7 > 0)  // if not yet expired, every 64th time 
+			(swtimer7)--;    // then decrement very slow timer (6.4 ms to 1.6s)
 
-	//    B.  Update
-
+		//    B.  Update
 	}
    
 /*******************************************************************/
@@ -242,23 +244,14 @@ void timer0(void)
 /*******************************************************************/   
 	else 
 	{
-	//    timer states 0, 64, 128, 192
+		//    timer states 0, 64, 128, 192
 
-	//    A. Display timer and flag
-	display_timer--; 		// decrement display timer every 6.4 ms.  Total time is      
-											// 256*6.4ms = 1.6384 seconds. 
-		
-	if (display_timer == 1)
-		display_flag = 1; // every 1.6384 seconds, now OK to display
-
-
-	//    B. Heartbeat/ LED outputs
-	//   Generate Outputs  ************************************
-
-	/* ECEN 5803 add code as indicated */
-	// Create an 0.5 second RED LED heartbeat here. 
-	// NEED FOR MODULE 3. 
-
+		//    A. Display timer and flag
+		display_timer--; 		// decrement display timer every 6.4 ms.  Total time is      
+												// 256*6.4ms = 1.6384 seconds. 
+			
+		if (display_timer == 1)
+			display_flag = 1; // every 1.6384 seconds, now OK to display
 	}
    
 /*******************************************************************/
@@ -268,6 +261,20 @@ void timer0(void)
 	if (((long_time_state & 0x01) != 0) && (timer_state == 0))  													
 	{
 		
+	}
+
+/*******************************************************************/
+/*     Heartbeat / LED Group                                       */
+/*******************************************************************/ 
+	// Create an 0.5 second RED LED heartbeat here. 
+	if (led_timer > LED_TOGGLE_TICKS)
+	{
+		led_flag = 1; 
+		led_timer = 0;
+	}
+	else
+	{
+		led_timer++;
 	}
 	
 	System_Timer_count++;  

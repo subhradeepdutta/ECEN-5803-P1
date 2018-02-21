@@ -46,6 +46,8 @@
 #define T2S    (2 * SEC)
                               
 #define LED_FLASH_PERIOD .5   /* in seconds */
+#define LED_TOGGLE_TICKS (5000) /* How many ticks at 100 us per tick it takes to get */
+																/* 1 second flashing period for LED */
  
 #define CLOCK_FREQUENCY_MHZ 8
 #define CODE_VERSION "2.1 2018/02/21"   /*   YYYY/MM/DD  */
@@ -67,9 +69,9 @@ extern "C" {
 /*             Global Variable declarations                             */
 /************************************************************************/
  
- extern unsigned char Error_status; // Variable for debugging use
- extern UCHAR  display_timer;  			// second software timer for display   
- extern UCHAR  display_flag;   			// flag between timer interrupt and
+extern unsigned char Error_status; 	// Variable for debugging use
+extern UCHAR  display_timer;  			// second software timer for display   
+extern UCHAR  display_flag;   			// flag between timer interrupt and
 																		// monitor.c like a binary semaphore
 
 extern UCHAR tx_in_progress;                        
@@ -92,11 +94,14 @@ enum dmode display_mode = QUIET;
 
 UCHAR serial_flag = 0;
 
+UCHAR led_flag = 0; 						/* set by the timer when LED should toggle */
+																/* will only be cleared by manually doing so */
+
 UCHAR tx_in_progress; 
 UCHAR *rx_in_ptr; 							/* pointer to the receive in data */
 UCHAR *rx_out_ptr; 							/* pointer to the receive out data*/
 UCHAR *tx_in_ptr; 							/* pointer to the transmit in data*/
-UCHAR *tx_out_ptr; 							/*pointer to the transmit out */        
+UCHAR *tx_out_ptr; 							/* pointer to the transmit out */        
 	
 UCHAR  rx_buf[RX_BUF_SIZE];     /* define the storage */
 UCHAR  tx_buf[TX_BUF_SIZE];     /* define the storage */
@@ -126,6 +131,7 @@ extern volatile     UCHAR swtimer6;
 extern volatile     UCHAR swtimer7;    
 
 extern UCHAR serial_flag;
+extern UCHAR led_flag;
 
 extern enum dmode display_mode;
 

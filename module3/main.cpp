@@ -44,7 +44,7 @@ Ticker tick;    /* Creates a timer interrupt using mbed methods */
 
 /****************      ECEN 5803 add code as indicated   ***************/
 
-// Add code to control red, green and blue LEDs here
+/* Add code to control red, green and blue LEDs here */
 DigitalOut greenLED(LED_GREEN);
 DigitalOut redLED(LED_RED);
 DigitalOut blueLED(LED_BLUE);
@@ -54,64 +54,66 @@ Serial pc(USBTX, USBRX);
  
 void flip()  
 {                
-    greenLED = !greenLED;
+	redLED = !redLED;
 }
  
 int main() 
 {
-/****************      ECEN 5803 add code as indicated   ***************/
+	/* Start with all LEDs off */
+	greenLED = 1; 
+	redLED = 1;
+	blueLED = 1; 
 
-    /*  Add code to call timer0 function every 100 uS */
-    tick.attach(&timer0, 0.0001);
+	/*  Add code to call timer0 function every 100 uS */
+	tick.attach(&timer0, 0.0001);
 
-    uint32_t  count = 0;   
-    
-    /* initialize serial buffer pointers */
-    rx_in_ptr =  rx_buf; /* pointer to the receive in data */
-    rx_out_ptr = rx_buf; /* pointer to the receive out data*/
-    tx_in_ptr =  tx_buf; /* pointer to the transmit in data*/
-    tx_out_ptr = tx_buf; /* pointer to the transmit out */
-    
-   
-    /* Print the initial banner */
-    pc.printf("\r\nHello World!\n\n\r");
+	uint32_t  count = 0;   
 
-/****************      ECEN 5803 add code as indicated   ***************/
+	/* initialize serial buffer pointers */
+	rx_in_ptr =  rx_buf; /* pointer to the receive in data */
+	rx_out_ptr = rx_buf; /* pointer to the receive out data*/
+	tx_in_ptr =  tx_buf; /* pointer to the transmit in data*/
+	tx_out_ptr = tx_buf; /* pointer to the transmit out */
 
-   /* send a message to the terminal  */                    
-   UART_direct_msg_put("\r\nSystem Reset\r\nCode ver. ");
-   UART_direct_msg_put( CODE_VERSION );
-   UART_direct_msg_put("\r\n");
-   UART_direct_msg_put( COPYRIGHT );
-   UART_direct_msg_put("\r\n");
 
-   set_display_mode();                                        
+	/* Print the initial banner */
+	pc.printf("\r\nHello World!\n\n\r");
 
-    /* Cyclical Executive Loop */
-    while(1)
-    {
+	/****************      ECEN 5803 add code as indicated   ***************/
 
-        count++;                /* counts the number of times through the loop */
-        
-        //__enable_interrupts();
-        __enable_irq();
-        //__clear_watchdog_timer();
+	/* send a message to the terminal  */                    
+	UART_direct_msg_put("\r\nSystem Reset\r\nCode ver. ");
+	UART_direct_msg_put( CODE_VERSION );
+	UART_direct_msg_put("\r\n");
+	UART_direct_msg_put( COPYRIGHT );
+	UART_direct_msg_put("\r\n");
 
-/***************      ECEN 5803 add code as indicated   ***************/
+	set_display_mode();                                        
 
-        serial();               /* Polls the serial port */
-        chk_UART_msg();         /* checks for a serial port message received */
-        
-        /* Sends serial port output depending on commands received/mode */
-        monitor();
+	/* Cyclical Executive Loop */
+	while(1)
+	{
+		/* counts the number of times through the loop */
+		count++;                
 
-        /* Should toggle every .08 s or so */ 
-        //if ((SwTimerIsrCounter & 0x1FFF) > 0x0FFF)
-        //{
-        //    flip();  // Toggle Green LED
-        //}
-   
-    } 
-       
+		__enable_irq();
+
+		/***************      ECEN 5803 add code as indicated   ***************/
+
+		serial();               /* Polls the serial port */
+		chk_UART_msg();         /* checks for a serial port message received */
+
+		/* Sends serial port output depending on commands received/mode */
+		monitor();
+
+		/* Red LED toggle every 0.5 s, based on timer0 setting led_flag */
+		if (led_flag)
+		{
+		  flip();  // Toggle Red LED
+			
+			led_flag = 0; 
+		}
+	}
+
 }
 
