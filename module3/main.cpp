@@ -106,10 +106,10 @@ int main()
         monitor();
 
         /* Should toggle every .08 s or so */ 
-        if ((SwTimerIsrCounter & 0x1FFF) > 0x0FFF)
-        {
-            flip();  // Toggle Green LED
-        }
+        //if ((SwTimerIsrCounter & 0x1FFF) > 0x0FFF)
+        //{
+        //    flip();  // Toggle Green LED
+        //}
    
     } 
        

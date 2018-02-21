@@ -53,14 +53,14 @@
 #include "MKL25Z4.h"
 
 // NOTE:  UART0 is also called UARTLP in mbed
-#define OERR (UART0->S1 & UARTLP_S1_OR_MASK)   // Overrun Error bit
-#define CREN (UART0->C2 & UARTLP_C2_RE_MASK)   // continuous receive enable bit
-#define RCREG UART0->D                        // Receive Data Register
-#define FERR (UART0->S1 & UARTLP_S1_FE_MASK)   // Framing Error bit
-#define RCIF (UART0->S1 & UARTLP_S1_RDRF_MASK) // Receive Interrupt Flag (full)
-#define TXIF (UART0->S1 & UARTLP_S1_TDRE_MASK) // Transmit Interrupt Flag (empty)
-#define TXREG UART0->D                        // Transmit Data Register
-#define TRMT (UART0->S1 & UARTLP_S1_TC_MASK)   // Transmit Shift Register Empty
+#define OERR (UART0->S1 & UARTLP_S1_OR_MASK)   	// Overrun Error bit
+#define CREN (UART0->C2 & UARTLP_C2_RE_MASK)   	// continuous receive enable bit
+#define RCREG UART0->D                        	// Receive Data Register
+#define FERR (UART0->S1 & UARTLP_S1_FE_MASK)   	// Framing Error bit
+#define RCIF (UART0->S1 & UARTLP_S1_RDRF_MASK) 	// Receive Interrupt Flag (full)
+#define TXIF (UART0->S1 & UARTLP_S1_TDRE_MASK) 	// Transmit Interrupt Flag (empty)
+#define TXREG UART0->D                        	// Transmit Data Register
+#define TRMT (UART0->S1 & UARTLP_S1_TC_MASK)   	// Transmit Shift Register Empty
 
 /*********************************** 
  *        Start of code            * 
@@ -73,56 +73,64 @@
 void serial(void)       // The serial function polls the serial port for 
                         // received data or data to transmit
 {
-                         // deals with error handling first
-   if ( OERR )           // if an overrun error, clear it and continue.
-   {
-      error_count++;         
-                            // resets and sets continous receive enable bit
-      UART0->C2 = UART0->C2 & (!UARTLP_C2_RE_MASK);
-      UART0->C2 = UART0->C2 | UARTLP_C2_RE_MASK;
-   }
-   
-   if ( FERR){       // if a framing error, read bad byte, clear it and continue.
-      error_count++;
-      RCREG;         // This will also clear RCIF if only one byte has been 
-                     // received since the last int, which is our assumption.
-                     
-                     // resets and sets continous receive enable bit
-      UART0->C2 = UART0->C2 & (!UARTLP_C2_RE_MASK);
-      UART0->C2 = UART0->C2 | UARTLP_C2_RE_MASK;
-   }
-   else              // else if no frame error,
-   {
-      if ( RCIF )   // Check if we have received a byte
-      {             // Read byte to enable reception of more bytes
-                    // For PIC, RCIF automatically cleared when RCREG is read
-                    // Also true of Freescale KL25Z
-         *rx_in_ptr++ = RCREG;         /* get received character */    
-         if( rx_in_ptr >= RX_BUF_SIZE + rx_buf )
-         {
-            rx_in_ptr = rx_buf;    /* if at end of buffer, circles rx_in_ptr 
-                                      to top of buffer */ 
-         } 
+	/* Deal with errors first */
+	if ( OERR )           // if an overrun error, clear it and continue.
+  {
+		error_count++;         
 
-      }     
-   }
+		/* resets and sets continous receive enable bit */
+		UART0->C2 = UART0->C2 & (!UARTLP_C2_RE_MASK);
+		UART0->C2 = UART0->C2 | UARTLP_C2_RE_MASK;
+  }
    
-   if (TXIF)          //  Check if transmit buffer empty  
-   {
-      if ((tx_in_ptr != tx_out_ptr) && (display_mode != QUIET))
-      {
-         TXREG = *tx_out_ptr++;     /* send next char */
-         if( tx_out_ptr >= TX_BUF_SIZE + tx_buf )
-            tx_out_ptr = tx_buf;           /* 0 <= tx_out_idx < TX_BUF_SIZE */        
-         tx_in_progress = YES;          /* flag needed to start up after idle */
-      }
-      else
-      {
-         tx_in_progress = NO;             /* no more to send */
-      }
-  }                   
-//  serial_count++;         // increment serial counter, for debugging only
-  serial_flag = 1;        // and set flag
+  if ( FERR ) 					// framing error; read bad byte, clear it and continue
+	{       	
+		error_count++;
+
+		RCREG;         		// This will also clear RCIF if only one byte has been 
+											// received since the last int, which is our assumption.
+											// resets and sets continous receive enable bit
+
+		UART0->C2 = UART0->C2 & (!UARTLP_C2_RE_MASK);
+		UART0->C2 = UART0->C2 | UARTLP_C2_RE_MASK;
+  }
+  else              	// else if no frame error,
+  {
+		if ( RCIF )   		// Check if we have received a byte
+		{             		// Read byte to enable reception of more bytes
+											// For PIC, RCIF automatically cleared when RCREG is read
+											// Also true of Freescale KL25Z
+			
+			*rx_in_ptr++ = RCREG;   	// get received character */    
+		
+			if( rx_in_ptr >= RX_BUF_SIZE + rx_buf )
+			{
+				rx_in_ptr = rx_buf;    // if at end of buffer, circles rx_in_ptr 
+															 // to top of buffer
+			} 
+
+		}     
+	}
+   
+	if (TXIF)          //  Check if transmit buffer empty
+	{
+		if ((tx_in_ptr != tx_out_ptr) && (display_mode != QUIET))
+		{
+			TXREG = *tx_out_ptr++;     /* send next char */
+			
+			if( tx_out_ptr >= TX_BUF_SIZE + tx_buf )
+				tx_out_ptr = tx_buf;     /* 0 <= tx_out_idx < TX_BUF_SIZE */        
+			
+			tx_in_progress = YES;      /* flag needed to start up after idle */
+		}
+		else
+		{
+			tx_in_progress = NO;             /* no more to send */
+		}
+	}                   
+	
+	//  serial_count++;         // increment serial counter, for debugging only
+	serial_flag = 1;        // and set flag
 }
 
 /*******************************************************************************
@@ -131,15 +139,16 @@ void serial(void)       // The serial function polls the serial port for
 *******************************************************************************/
 void UART_direct_msg_put(const char *str)
 {
-   while( *str != '\0' )
-   {
-      TXREG = *str++;
-      while( TXIF == 0 || TRMT == 0 )  // waits here for UART transmit buffer
-                                      // to be empty
-      {
-    //  __clear_watchdog_timer();
-      }
-   }
+	while( *str != '\0' )
+	{
+		TXREG = *str++;
+		
+		while( TXIF == 0 || TRMT == 0 )  	// waits here for UART transmit buffer
+																			// to be empty
+		{
+			;
+		}
+	}
 }
 
 /*******************************************************************************
@@ -152,9 +161,14 @@ void UART_direct_msg_put(const char *str)
 *******************************************************************************/
 void UART_put(UCHAR c)
 {
-   *tx_in_ptr++ = c;                    /* save character to transmit buffer */
-   if( tx_in_ptr >= TX_BUF_SIZE + tx_buf)
-      tx_in_ptr = tx_buf;                     /* 0 <= tx_in_idx < TX_BUF_SIZE */          
+	__disable_irq(); 
+	
+	*tx_in_ptr++ = c;                    		/* save character to transmit buffer */
+
+	if( tx_in_ptr >= TX_BUF_SIZE + tx_buf)
+		tx_in_ptr = tx_buf;                		/* 0 <= tx_in_idx < TX_BUF_SIZE */    
+
+	__enable_irq(); 	
 }
 
 /*******************************************************************************
@@ -167,19 +181,22 @@ void UART_put(UCHAR c)
 *******************************************************************************/
 UCHAR UART_get(void)
 {
-   UCHAR c;
-   while( rx_in_ptr == rx_out_ptr );      /* wait for a received character, 
-                                                                indicated */
-                                          // when pointers are different
-                                          // this could be an infinite loop, but 
-                                          // is not because of UART_input check   
-   c = *rx_out_ptr++;
-   if( rx_out_ptr >= RX_BUF_SIZE + rx_buf )  // if at end of buffer
-   {
-      rx_out_ptr = rx_buf;                /* 0 <= rx_out_idx < RX_BUF_SIZE */        
-                                        // return byte from beginning of buffer
-   }                                    // next time.  
-   return(c);
+	UCHAR c;
+	
+	while( rx_in_ptr == rx_out_ptr )      		// wait for a received character
+		;																				// indicated when pointers are different
+																						// this could be an infinite loop, but 
+																						// is not because of UART_input check   
+	
+	c = *rx_out_ptr++;
+	
+	if( rx_out_ptr >= RX_BUF_SIZE + rx_buf )  // if at end of buffer
+	{
+		rx_out_ptr = rx_buf;                		// 0 <= rx_out_idx < RX_BUF_SIZE */        
+	}																					// return byte from beginning of buffer                                    
+																						// next time.  
+	
+	return(c);
 }
 
 /*******************************************************************************
@@ -190,10 +207,10 @@ UCHAR UART_get(void)
 *******************************************************************************/
 UCHAR UART_input(void)
 {
-   if( rx_in_ptr == rx_out_ptr )
-      return(0);                          /* no characters in receive buffer */
-   else
-      return(1);                        /* 1 or more receive characters ready */
+	if( rx_in_ptr == rx_out_ptr )
+		return(0);                  	/* no characters in receive buffer */
+  else
+    return(1);                    /* 1 or more receive characters ready */
 }
 
 /*******************************************************************************
@@ -202,32 +219,14 @@ UCHAR UART_input(void)
 *******************************************************************************/
 void UART_msg_put(const char *str)
 {
-   while( *str != '\0' )
-   {
-      *tx_in_ptr++ = *str++;        /* save character to transmit buffer */
-      if( tx_in_ptr >= TX_BUF_SIZE + tx_buf)
-         tx_in_ptr = tx_buf;                  /* 0 <= tx_in_idx < TX_BUF_SIZE */        
-   }   
+	while( *str != '\0' )
+	{
+		*tx_in_ptr++ = *str++;        					/* save character to transmit buffer */
+		
+		if( tx_in_ptr >= TX_BUF_SIZE + tx_buf)
+			tx_in_ptr = tx_buf;                  	/* 0 <= tx_in_idx < TX_BUF_SIZE */        
+	}   
 }
-
-
-/*******************************************************************************
-* The function UART_low_nibble_put puts the low nibble of a byte in hex through
-* the transmit buffer to the UART port.             
-*******************************************************************************/
-//void UART_low_nibble_put(UCHAR c)
-//{
-//   UART_put( hex_to_asc( c & 0x0f ));
-//}
-
-/*******************************************************************************
-* The function UART_high_nibble_put puts the high nibble of a byte in h
-* UART port.
-*******************************************************************************/
-//void UART_high_nibble_put(unsigned char c)
-//{
-//   UART_put( hex_to_asc( (c>>4) & 0x0f ));
-//}
 
 /*******************************************************************************
 * HEX_TO_ASC Function
@@ -235,9 +234,10 @@ void UART_msg_put(const char *str)
 ******************************************************************************/
 UCHAR hex_to_asc(UCHAR c)
 {
-   if( c <= 9 )
-      return( c + 0x30 );
-   return( ((c & 0x0f) + 0x37 ));        /* add 37h */
+	if( c <= 9 )
+		return( c + 0x30 );										/* Offset to ascii numbers */
+	else
+		return( ((c & 0x0f) + 0x37 ));        /* Offset to ascii letters */
 }
 
 /*******************************************************************************
@@ -246,9 +246,10 @@ UCHAR hex_to_asc(UCHAR c)
 *******************************************************************************/
 UCHAR asc_to_hex(UCHAR c)
 {
-   if( c <= '9' )
-      return( c - 0x30 );
-   return( (c & 0xdf) - 0x37 );    /* clear bit 5 (lower case) & subtract 37h */
+	if( c <= '9' )
+		return( c - 0x30 );
+	else
+		return( (c & 0xdf) - 0x37 );    /* clear bit 5 (lower case) & subtract 37h */
 }
 
 
@@ -258,9 +259,8 @@ UCHAR asc_to_hex(UCHAR c)
 *******************************************************************************/
 void UART_hex_put(unsigned char c)
 {
-   UART_put( hex_to_asc( (c>>4) & 0x0f ));  // could eliminate & as >> of UCHAR
-                                             // by definition clears upper bits.
-   UART_put( hex_to_asc( c & 0x0f ));
+	UART_put( hex_to_asc(c>>4) );			/* Upper nibble */
+	UART_put( hex_to_asc( c & 0x0f )); /* Lower nibble */
 }
 
 /*******************************************************************************
@@ -269,14 +269,17 @@ void UART_hex_put(unsigned char c)
 *******************************************************************************/
 void UART_direct_hex_put(unsigned char c)
 {
-   TXREG = hex_to_asc( (c>>4) & 0x0f );
-   while( TXIF == 0 )
-   {
-    //  __clear_watchdog_timer();
-   }
-   TXREG = hex_to_asc( c & 0x0f );
-   while( TXIF == 0 )
-   {
-    //  __clear_watchdog_timer();
-   }
+	TXREG = hex_to_asc( (c>>4) & 0x0f );
+	
+	while( TXIF == 0 )
+	{
+		;
+	}
+	
+	TXREG = hex_to_asc( c & 0x0f );
+	
+	while( TXIF == 0 )
+	{
+		;
+	}
 }
