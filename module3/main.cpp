@@ -35,6 +35,7 @@
 #include "shared.h"
 #undef MAIN
 
+#include <stdint.h>
 #include "mbed.h"
 
 extern volatile uint16_t SwTimerIsrCounter; 
@@ -77,7 +78,7 @@ int main()
 
 
 	/* Print the initial banner */
-	pc.printf("\r\nHello World!\n\n\r");
+	pc.printf("\r\nHello World!\n\r");
 
 	/****************      ECEN 5803 add code as indicated   ***************/
 
@@ -114,6 +115,4 @@ int main()
 			led_flag = 0; 
 		}
 	}
-
 }
-

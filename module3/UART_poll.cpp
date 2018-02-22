@@ -44,10 +44,6 @@
 /*******************/
 /*  Configurations */
 /*******************/
-/*
-
-*/
-
 #include <stdio.h>
 #include "shared.h"
 #include "MKL25Z4.h"
@@ -269,17 +265,16 @@ void UART_hex_put(unsigned char c)
 *******************************************************************************/
 void UART_direct_hex_put(unsigned char c)
 {
+	while( TXIF == 0 ) /* Make sure that transmission is possible */
+		;
+	
 	TXREG = hex_to_asc( (c>>4) & 0x0f );
 	
-	while( TXIF == 0 )
-	{
+	while( TXIF == 0 ) /* Wait for transmission to finish */
 		;
-	}
 	
 	TXREG = hex_to_asc( c & 0x0f );
 	
-	while( TXIF == 0 )
-	{
+	while( TXIF == 0 ) /* Wait for transmission to finish */
 		;
-	}
 }

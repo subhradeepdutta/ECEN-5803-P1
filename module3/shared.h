@@ -92,6 +92,8 @@ extern UCHAR *tx_out_ptr; 	/*pointer to the transmit out */
 
 enum dmode display_mode = QUIET;
 
+UCHAR pause_flag = 0; 
+
 UCHAR serial_flag = 0;
 
 UCHAR led_flag = 0; 						/* set by the timer when LED should toggle */
@@ -132,9 +134,11 @@ extern volatile     UCHAR swtimer7;
 
 extern UCHAR serial_flag;
 extern UCHAR led_flag;
+extern UCHAR pause_flag; 
 
 extern enum dmode display_mode;
 
+extern UCHAR error_count;							/* UART error count */
 
 extern UCHAR  rx_buf[];      					/* declare the storage */
 extern UCHAR  tx_buf[];      					/* declare the storage */
