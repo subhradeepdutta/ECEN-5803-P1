@@ -137,7 +137,12 @@ int main()
                           //  on commands received and display mode
 
     /****************      ECEN 5803 add code as indicated   ***************/
-    //  readADC()
+    // if adc_flag set
+		
+		// readADC()
+		
+		// calculate frequency()
+		// calculate temperature()
 
     //  calculate flow()
 
@@ -146,6 +151,8 @@ int main()
     //  Pulse output()   // use TMP0 channel 4  propotional rate to frequency
 
     //  LCD_Display()   // use the SPI port to send flow number
+		
+		// clear adc_flag
 
     //  End ECEN 5803 code addition
 
