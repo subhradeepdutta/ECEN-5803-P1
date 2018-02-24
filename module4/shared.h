@@ -28,7 +28,7 @@
 --
 */              
                           
- #include "mbed.h"  
+#include "mbed.h"  
  
  /*****************************************************************************
 * #defines available to all modules included here
@@ -73,7 +73,7 @@ extern "C" {
  extern UCHAR  display_timer;   // 1 second software timer for display   
  extern UCHAR  display_flag;    // flag between timer interrupt and monitor.c, like
                                 // a binary semaphore
- 
+	
  extern UCHAR  adc_flag;  // flag which times ADC sampling using the timer 
                           // interrupt semaphore to main
                           
@@ -93,6 +93,8 @@ extern "C" {
 #ifdef MAIN
 
  enum dmode display_mode = QUIET;
+ 
+UCHAR  adc_flag = 0;
  
 UCHAR pause_flag = 0;           /* When set, halts automatic serial outputs */
 
@@ -174,6 +176,8 @@ extern void chk_UART_msg(void);               /* located in module monitor.c */
 extern void UART_msg_process(void);          /* located in module monitors.c */
 extern void status_report(void);             /* located in module monitor.c */  
 extern void set_display_mode(void);          /* located in module monitor.c */
+
+extern uint32_t calculateFrequency(uint16_t latestValue); /* located in freq.c */
 
 #ifdef __cplusplus
 }

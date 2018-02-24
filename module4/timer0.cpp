@@ -151,7 +151,7 @@ void timer0(void)
 //    B.   Update Sensors
 
    /****************      ECEN 5803 add code as indicated   ***************/
- //      adc_flag = 1;   // time to sample the ADC in main
+   adc_flag = 1;   // time to sample the ADC in main
 
 /*******************************************************************/
 /*      200 us Group                                                 */

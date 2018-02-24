@@ -92,6 +92,9 @@ void flip_r()
  
 int main() 
 {
+	float currentFreq = 0; /* Updated from ADC sampling */
+	float currentTemp = 0; /* Updated from internal temp sensor sampling via ADC */
+	
   /* Start with all LEDs off */
 	greenLED = 1; 
 	redLED = 1;
@@ -137,11 +140,11 @@ int main()
                           //  on commands received and display mode
 
     /****************      ECEN 5803 add code as indicated   ***************/
-    // if adc_flag set
-		
+    if (adc_flag)
+		{
 		// readADC()
 		
-		// calculate frequency()
+		currentFreq = calculateFrequency(0);
 		// calculate temperature()
 
     //  calculate flow()
@@ -152,7 +155,8 @@ int main()
 
     //  LCD_Display()   // use the SPI port to send flow number
 		
-		// clear adc_flag
+			adc_flag = 0;
+		}
 
     //  End ECEN 5803 code addition
 

@@ -1183,7 +1183,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>serial_dbg</GroupName>
+          <GroupName>flowmeter</GroupName>
           <Files>
             <File>
               <FileName>main.cpp</FileName>
@@ -1214,6 +1214,11 @@
               <FileName>UART_poll.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>UART_poll.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>freq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freq.c</FilePath>
             </File>
           </Files>
         </Group>
