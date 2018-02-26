@@ -5,6 +5,11 @@
 #include "core_cm0plus.h"
 
 #define MSB_16BIT (1 << 15)
+#define TEMP_SENSOR_CHANNEL_INPUT (26)
+#define VREFSL_CHANNEL_INPUT (30)
+#define J10_4_CHANNEL_INPUT (9)
+#define V_TEMP25 (716)
+#define M (1620)
 
 Serial pc(USBTX, USBRX);
 
@@ -14,10 +19,9 @@ AnalogIn analog1(PTB1);//J10_4
 AnalogIn analog2(PTB2);//Temperature
 
 /*Variables to store ADC values*/
-unsigned int ADC_val_channel_0, ADC_val_channel_1; 
-volatile unsigned int ADC_val_channel_2;
-
-/**************************************
+volatile uint16_t ADC_val_channel_0, ADC_val_channel_1, ADC_val_channel_2; 
+ 
+/****************************************
 Description: This function performs
 						 calibration for the ADC
 						 and returns a value 
@@ -29,7 +33,7 @@ Input: N/A
 Output: The function returns 0 if the
 			  calibration was successful else
 				it returns 1
-**************************************/
+****************************************/
 
 int ADC_Calibrate()
 {
@@ -57,17 +61,19 @@ int ADC_Calibrate()
   calibration += ADC0->CLP3;
   calibration += ADC0->CLP4;
   calibration += ADC0->CLPS;
+	
 	/*Divide the calibration variable by 2*/
 	calibration = calibration/2;
 	
-	/*Set the MSB fpr the calibration variable*/
+	/*Set the MSB for the calibration variable*/
 	calibration |= (MSB_16BIT);
 	
 	/*Store the values in plus side gain calibration register*/
 	ADC0->PG = calibration;
 
-	/*Update the minus side calibration registers*/
+	/*Reset the value for minus side*/
   calibration = 0;
+	/*Update the minus side calibration registers*/
   calibration += ADC0->CLM0;
   calibration += ADC0->CLM1;
   calibration += ADC0->CLM2;
@@ -77,7 +83,7 @@ int ADC_Calibrate()
 	/*Divide the calibration variable by 2*/
   calibration = calibration/2;
 	
-	/*Set the MSB fpr the calibration variable*/
+	/*Set the MSB for the calibration variable*/
   calibration |= (MSB_16BIT);  
 
 	/*Store the values in minus side gain calibration register*/
@@ -90,17 +96,18 @@ int ADC_Calibrate()
 }
 
 
-/**************************************
-Description: This function intializes
-						 ADC and checks if
+/****************************************
+Description: This function intializes the
+						 ADC and checks if the
 						 calibration was successful
 
 Input: N/A
 
 Output: The function returns 0 if the
 			  ADC initialization process
-				was completed successfully
-**************************************/
+				was completed successfully else
+				returns 1 for failure
+****************************************/
 int ADC_Init()
 {
 		/*Provide clock for ADC0*/
@@ -127,7 +134,7 @@ int ADC_Init()
     ADC0->CFG2 |= ADC_CFG2_ADLSTS(0);
 		
 	  ADC0->SC3  |= (ADC_SC3_ADCO_MASK | //Continuous Conversion for channel 2
-									 ADC_SC3_AVGE_MASK); //Hardware average failed
+									 ADC_SC3_AVGE_MASK); //Hardware averaging enabled
 		
 		/* 4 samples averaged*/
 		ADC0->SC3  &= ~(ADC_SC3_AVGS_MASK);
@@ -137,24 +144,45 @@ int ADC_Init()
 		return (calibration_status);
 }
 
+/****************************************
+Description: This function accepts the 
+						 channel number as input and
+						 performs a read from the ADC
+						 for the corresponding channel
+						 by setting the channel values
 
-int ADC_Read(int channel)
+Input: ADC channel whose value is to be
+			 read
+
+Output: The function returns the value of
+				the conversion by reading it from
+				the corresponding data register or
+				returns 0 if invalid channel
+				number has been passed
+****************************************/
+
+
+uint16_t ADC_Read(int channel)
 {
 	/*Set the channel selection value by configuring the value of ADCH in SC1[0]*/
 	if(channel == 0)
 	{
 		ADC0->SC1[0] &= ~(ADC_SC1_ADCH_MASK); 
-		ADC0->SC1[0] |=ADC_SC1_ADCH(30);
+		ADC0->SC1[0] |= ADC_SC1_ADCH(VREFSL_CHANNEL_INPUT);
 	}
 	else if(channel == 1)
 	{
 		ADC0->SC1[0] &= ~(ADC_SC1_ADCH_MASK); 
-		ADC0->SC1[0] |=ADC_SC1_ADCH(9);
+		ADC0->SC1[0] |= ADC_SC1_ADCH(J10_4_CHANNEL_INPUT);
 	}
 	else if(channel == 2)
 	{
 		ADC0->SC1[0] &= ~(ADC_SC1_ADCH_MASK); 
-		ADC0->SC1[0] |=ADC_SC1_ADCH(26);
+		ADC0->SC1[0] |= ADC_SC1_ADCH(TEMP_SENSOR_CHANNEL_INPUT);
+	}
+	else
+	{
+		return (0x0000);
 	}
 	
 	/*Block until conversion is complete*/
@@ -167,24 +195,20 @@ int ADC_Read(int channel)
 
 int main()
 {
-	volatile unsigned int temperature;
-	unsigned int m;
-    while(1)
+		volatile unsigned int temperature;
+		while(1)
     {     
 			/*Check if calibration was successful*/
-			if(ADC_Init() == 0)
+			if(!(ADC_Init()))
 			{
 				ADC_val_channel_0 = ADC_Read(0);
 				ADC_val_channel_1 = ADC_Read(1);
 				ADC_val_channel_2 = ADC_Read(2);
 			}
-			/*Convert ADC value to celsius*/
-			if((ADC_val_channel_2 - 7160)>0)
-				m = 1646;
-			else
-				m = 1769;
-			temperature = 25 - ((ADC_val_channel_2 - 716)/m);
+			/*Convert ADC value to celsius based on formula */
+			temperature = 25 - ((ADC_val_channel_2 - V_TEMP25)/M);
+			
 			/* Print ADC values to Terminal */
 			pc.printf("%d, %d, %d,  %d\n\r", ADC_val_channel_0, ADC_val_channel_1, ADC_val_channel_2, temperature);
-        }
+    }
 }
