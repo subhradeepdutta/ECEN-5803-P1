@@ -3,13 +3,14 @@
 #include "system_MKL25Z4.h"
 #include "mbed.h"
 #include "core_cm0plus.h"
+#include "stdlib.h"
 
 #define MSB_16BIT (1 << 15)
 #define TEMP_SENSOR_CHANNEL_INPUT (26)
 #define VREFSL_CHANNEL_INPUT (30)
 #define J10_4_CHANNEL_INPUT (9)
 #define V_TEMP25 (716)
-#define M (1620)
+
 
 Serial pc(USBTX, USBRX);
 
@@ -19,7 +20,7 @@ AnalogIn analog1(PTB1);//J10_4
 AnalogIn analog2(PTB2);//Temperature
 
 /*Variables to store ADC values*/
-volatile uint16_t ADC_val_channel_0, ADC_val_channel_1, ADC_val_channel_2; 
+float ADC_val_channel_0, ADC_val_channel_1, ADC_val_channel_2; 
  
 /****************************************
 Description: This function performs
@@ -196,17 +197,26 @@ uint16_t ADC_Read(int channel)
 int main()
 {
 	volatile unsigned int temperature;
+	float temp_val=0;
+	float m;
 	while(1)
     {     
 		/*Check if calibration was successful*/
 		if(!(ADC_Init()))
 		{
-			ADC_val_channel_0 = ADC_Read(0);
+			temp_val = (ADC_Read(0)/65535);
+			ADC_val_channel_0 = (temp_val);
+			/*Virtual value so conversion is not needed*/
 			ADC_val_channel_1 = ADC_Read(1);
-			ADC_val_channel_2 = ADC_Read(2);
+			temp_val = (ADC_Read(2)/65535);
+			ADC_val_channel_2 = (temp_val);
 		}
 		/*Convert ADC value to Celsius based on formula */
-		temperature = 25 - ((ADC_val_channel_2 - V_TEMP25)/M);
+		if ((ADC_val_channel_2 - 0.716)>0) 
+             m = 1.646;
+        else m = 1.769;
+        temperature =  25 - (abs(ADC_val_channel_2 - 0.716) / m) ;
+		
 		
 		/* Print ADC values to Terminal */
 		pc.printf("%d, %d, %d,  %d\n\r", ADC_val_channel_0, ADC_val_channel_1, ADC_val_channel_2, temperature);
